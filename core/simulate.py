@@ -3,48 +3,43 @@ from .objects import body
 from .elementary.vector3 import Vector3, distance
 from .elementary.constants import G
 from .elementary.force import Force
-import pygame
 from time import time as t
 import core
+from core.visual import Visualization, RenderInfo
 
 
 class Simulation:
-    def __init__(self, objects=None, dt=0.1):
+    def __init__(self, objects, render_info, dt=0.1):
         self.objects = objects
         self.dt = dt
         self.time = 0
-        pygame.init()
-        self.screen = pygame.display.set_mode((1200, 600))
-        self.screen_width = 1200
-        self.screen_height = 600
-        pygame.display.set_caption('Simulation')
-        self.max_screen_x = 10 ** 10  # million km
-        self.max_screen_y = 0.5 * 10 ** 10  # half a million km
+
+        # Adding momentum on the start. If not added, the star system will only have the momentum of the orbiting
+        # object, so it will start to move somewhere
         for obj in self.objects:
             if obj.orbit is not None:
                 orbit = self.find_object(obj.orbit)
                 orbit_v = -obj.mass * obj.velocity / orbit.mass
                 orbit.velocity += orbit_v
 
+        # Visualization things
+        self.visualization = Visualization(objects, render_info)
+        self.render_info = render_info
+        if render_info.time_scale == 'real':
+            self.time_function = t
+        else:
+            self.time_function = self.get_simulation_time
+
     def run(self):
-        last_time = t()
+        last_time = self.time_function()
         while True:
             # Some debug
             print(distance(self.find_object('Moon').position, self.find_object('Earth').position), self.time)
 
             # Visualization
-            if t() - last_time > 0.01:
-                last_time = t()
-                self.screen.fill((0, 0, 0))
-                for obj in self.objects:
-                    pygame.draw.circle(self.screen, obj.color, (int(0.5 * (self.screen_width + (obj.position.x /
-                                       self.max_screen_x) * self.screen_width)), int(0.5 * (self.screen_height + (
-                                       obj.position.y / self.max_screen_y) * self.screen_height))),
-                                       2)  # int(obj.collider.radius / self.max_screen_x)
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        exit()
-                pygame.display.update()
+            if self.time_function() - last_time > self.render_info.update_time:
+                last_time = self.time_function()
+                self.visualization.update(self.objects)
 
             # Clean all effects from the objects
             for obj in self.objects:
@@ -57,7 +52,6 @@ class Simulation:
                         continue
                     force = G * obj1.mass * obj2.mass / (distance(obj1.position, obj2.position) ** 2)
                     obj1.apply_force(Force(force, application=obj1.position, target=obj2.position))
-                    # GOD YOU CAN'T APPLY FORCE TO ANOTHER OBJECT HERE!!!; IT WILL BE APPLIED IN ONE OF THE NEXT LOOPS
             self.time += self.dt
 
             # Compute collisions
@@ -76,4 +70,7 @@ class Simulation:
         for obj in self.objects:
             if obj.name == name:
                 return obj
+
+    def get_simulation_time(self):
+        return self.time
 

@@ -11,6 +11,9 @@ class Vector3:
         self.y = y
         self.z = z
 
+    def to_xyz(self):
+        return self.x / 1000000, self.y / 1000000, self.z / 1000000
+
     def __add__(self, other):
         if type(other) == Vector3:
             return Vector3(self.x + other.x, self.y + other.y, self.z + other.z)

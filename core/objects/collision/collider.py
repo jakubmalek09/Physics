@@ -8,3 +8,6 @@ class Collider:
 
     def react(self, obj, other) -> None:
         pass
+
+    def to_xyz(self):
+        pass

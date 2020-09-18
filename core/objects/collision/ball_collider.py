@@ -45,3 +45,6 @@ class BallCollider(Collider):
         other.position.x -= this_p * dx
         other.position.y -= this_p * dy
         other.position.z -= this_p * dz
+
+    def to_xyz(self):
+        return self.radius / 1000000, self.radius / 1000000, self.radius / 1000000

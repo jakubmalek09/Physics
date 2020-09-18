@@ -3,15 +3,15 @@ from core.objects.collision.collider import Collider
 from core.objects.collision.ball_collider import BallCollider
 from core.elementary.vector3 import Vector3
 from core.elementary.force import Force
-
+import ratcave as rc
 
 class Body:
     """
     Base class for all celestial bodies
     """
     def __init__(self, mass: float, position: Vector3, velocity: Vector3, acceleration: Vector3, rotation: Vector3,
-                 ang_velocity: Vector3, ang_acceleration: Vector3, collider: Collider, name=None, color=(80, 80, 80),
-                 orbit=None):
+                 ang_velocity: Vector3, ang_acceleration: Vector3, collider: Collider,
+                 mesh=None, name=None, color=(80, 80, 80), orbit=None):
         self.collider = collider
         self.mass = mass
         self.position = position
@@ -23,6 +23,11 @@ class Body:
         self.name = name
         self.color = color
         self.orbit = orbit
+        self.mesh = mesh
+        if mesh is None:
+            obj_filename = rc.resources.obj_primitives
+            obj_reader = rc.WavefrontReader(obj_filename)
+            self.mesh = obj_reader.get_mesh('Sphere')
 
     def crush(self, target):
         pass
