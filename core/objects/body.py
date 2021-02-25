@@ -5,6 +5,7 @@ from core.elementary.vector3 import Vector3
 from core.elementary.force import Force
 import ratcave as rc
 
+
 class Body:
     """
     Base class for all celestial bodies

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 class Visualization:
     def __init__(self, objects, render_info):
-        self.window = pyglet.window.Window()
+        self.window = pyglet.window.Window(width=1280, height=960)
         meshes = []
         self.ids = {}
         for obj in objects:
@@ -20,7 +20,7 @@ class Visualization:
             self.ids[obj.name] = mesh
 
         self.scene = rc.Scene(meshes=meshes)
-        self.scene.bgColor = 0, 0, 1
+        self.scene.bgColor = 0, 0, 0
         # projection = rc.camera.ProjectionBase(z_far=10000, z_near=0.001)
         projection = rc.PerspectiveProjection(z_far=render_info.far, z_near=render_info.near)
         self.scene.camera = rc.Camera(projection, rotation=(0, 0, 0))
