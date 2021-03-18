@@ -1,5 +1,5 @@
 from .collider import Collider
-from core.elementary.vector3 import distance, Vector3
+from core.elementary.math.geometry.geometry3d.vector3 import distance, Vector3
 
 
 class BallCollider(Collider):
@@ -11,7 +11,8 @@ class BallCollider(Collider):
         if isinstance(other.collider, BallCollider):
             return self.radius + other.collider.radius > distance(obj.position, other.position)
         else:
-            raise NotImplementedError('Collision with collider of type: {} not implemented yet'.format(type(other.collider)))
+            pass
+            # print('Collision with collider of type: {} not implemented yet'.format(type(other.collider)))
 
     def react(self, obj, other) -> None:
         # todo add momentum

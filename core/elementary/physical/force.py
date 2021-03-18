@@ -1,10 +1,10 @@
-from .vector3 import Vector3
+from core.elementary.math.geometry.geometry3d.vector3 import Vector3
 from math import sqrt
 import numpy as np
 
 
 class Force:
-    def __init__(self, value, vector=None, application=None, target=None):
+    def __init__(self, value, vector, application=None):
         """
         Any forced applied to any body
         No need to give all 4 values.
@@ -12,41 +12,68 @@ class Force:
         :type value: float
         :type vector: Vector3
         :type application: Vector3
-        :type target: Vector3
         :param value: Value of the force
         :param vector: Direction to apply the force. These values are only relatable and have no unit
-        :param application: Point towards what the force was applied
-        :param target: Body on which the force is being applied
+        :param application: Point of the force application; if none the force is applied to the center of the mass
         """
         if value < 0 or (type(value) is not int and type(value) is not float):
             raise ValueError('Force value must be positive integer or float')
-        self.value = value
-        if vector is None:
-            if target is None or application is None:
-                raise ValueError('Application and target values must be given')
-            self.vector = target - application
-        else:
-            self.vector = vector
+        self.__value = value
+        self.__vector = vector.unit
+        self.__application = application
 
-    def __sub__(self, other):
-        return self + (-other)
-
-    def __add__(self, other):
-        w = sqrt(self.vector.x ** 2 + self.vector.y ** 2 + self.vector.z ** 2)
+    @property
+    def components(self):
+        w = self.vector.length
+        if w == 0:
+            return 0, 0, 0
         fx = self.vector.x / w * self.value
         fy = self.vector.y / w * self.value
         fz = self.vector.z / w * self.value
 
-        w2 = sqrt(other.vector.x ** 2 + other.vector.y ** 2 + other.vector.z ** 2)
-        fx2 = other.vector.x / w2 * other.value
-        fy2 = other.vector.y / w2 * other.value
-        fz2 = other.vector.z / w2 * other.value
+        return fx, fy, fz
+
+    @property
+    def force_x(self):
+        return Force(self.components[0], Vector3(self.components[0], 0, 0))
+
+    @property
+    def force_y(self):
+        return Force(self.components[1], Vector3(0, self.components[1], 0))
+
+    @property
+    def force_z(self):
+        return Force(self.components[2], Vector3(0, 0, self.components[2]))
+
+    @property
+    def value(self):
+        return self.__value
+
+    @property
+    def vector(self):
+        return self.__vector
+
+    @property
+    def application(self):
+        return self.__application
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __add__(self, other: 'Force'):
+        fx = self.vector.x * self.value
+        fy = self.vector.y * self.value
+        fz = self.vector.z * self.value
+
+        fx2 = other.vector.x * other.value
+        fy2 = other.vector.y * other.value
+        fz2 = other.vector.z * other.value
 
         fx += fx2
         fy += fy2
         fz += fz2
 
-        return Force(sqrt(fx ** 2 + fy ** 2 + fz ** 2), Vector3(fx, fy, fz))
+        return Force(sqrt(fx ** 2 + fy ** 2 + fz ** 2), Vector3(fx, fy, fz), self.application)
 
     def __neg__(self):
         return Force(self.value, Vector3(-self.vector.x, -self.vector.y, -self.vector.z))
@@ -57,14 +84,6 @@ class Force:
 
     def __str__(self):
         return '[{}, {}, {}, {}]'.format(self.value, self.vector.x, self.vector.y, self.vector.z)
-
-    def to_components(self):
-        w = sqrt(self.vector.x ** 2 + self.vector.y ** 2 + self.vector.z ** 2)
-        fx = self.vector.x / w * self.value
-        fy = self.vector.y / w * self.value
-        fz = self.vector.z / w * self.value
-
-        return fx, fy, fz
 
 
 def add_forces(forces):

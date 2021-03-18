@@ -1,6 +1,6 @@
 from core.simulate import SimulationReal
 from core.objects.body import Body
-from core.elementary.vector3 import Vector3, distance
+from core.elementary.math.geometry.geometry3d.vector3 import Vector3
 from core.objects.collision.ball_collider import BallCollider
 from core.visual import RenderInfo
 

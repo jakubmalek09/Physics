@@ -1,17 +1,19 @@
-import numpy as np
-from .objects import body
-from .elementary.vector3 import Vector3, distance
-from .elementary.constants import G
-from .elementary.force import Force
-from time import time as t
-import core
-from core.visual import Visualization, RenderInfo
 from copy import deepcopy
+from time import time as t
+from typing import List
+
+import core
+from core.visual import Visualization
+from .elementary.constants import G
+from core.elementary.physical.force import Force
+from core.elementary.math.geometry.geometry3d.vector3 import distance
+from .objects import body
+from .objects.body import Body
 
 
 class SimulationReal:
-    def __init__(self, objects, render_info, dt=0.1, visualize=True):
-        self.start_objects = deepcopy(objects)
+    def __init__(self, objects: List[Body], render_info, dt=0.01, visualize=True):
+        self.start_objects = objects
         self.objects = objects
         self.dt = dt
         self.time = 0
@@ -34,41 +36,48 @@ class SimulationReal:
         else:
             self.time_function = self.get_simulation_time
 
-    def run(self):
-        last_time = self.time_function()
-        while True:
-            # Some debug
-            print(distance(self.find_object('Moon').position, self.find_object('Earth').position), self.time)
-            if self.time > 100000:
-                self.reset_simulation()
+        self.last_time = self.time_function()
 
-            # Visualization
-            if self.visualize:
-                if self.time_function() - last_time > self.render_info.update_time:
-                    last_time = self.time_function()
-                    self.visualization.update(self.objects)
+    def do_step(self):
+        # Visualization
+        if self.visualize:
+            if self.time_function() - self.last_time > self.render_info.update_time:
+                self.last_time = self.time_function()
+                self.visualization.update(self.objects)
 
-            # Clean all effects from the objects
-            for obj in self.objects:
-                obj.actualize_loop(self.dt)
+        # Clean all effects from the objects
+        for obj in self.objects:
+            obj.actualize_loop(self.dt)
 
-            # Apply gravity forces
-            for obj1 in self.objects:
-                for obj2 in self.objects:
-                    if obj1 is obj2:
-                        continue
-                    force = G * obj1.mass * obj2.mass / (distance(obj1.position, obj2.position) ** 2)
-                    obj1.apply_force(Force(force, application=obj1.position, target=obj2.position))
-            self.time += self.dt
+        # Apply gravity forces
+        for obj1 in self.objects:
+            for obj2 in self.objects:
+                if obj1 is obj2 or obj1.mass == 0 or obj2.mass == 0:
+                    continue
+                force = G * obj1.mass * obj2.mass / (distance(obj1.position, obj2.position) ** 2)
+                obj1.apply_force(Force(value=force, vector=(obj2.position - obj1.position).unit,
+                                       application=deepcopy(obj2.position)))
+        self.time += self.dt
 
-            # Compute collisions
-            for obj1 in self.objects:
-                for obj2 in self.objects:
-                    if obj1 is obj2:
-                        continue
+        # Compute collisions
+        for obj1 in self.objects:
+            for obj2 in self.objects:
+                if obj1 is obj2:
+                    continue
+                try:
                     if obj1.collider.check_collision(obj1, obj2):
                         obj1.collider.react(obj1, obj2)
                         obj2.collider.react(obj2, obj1)
+
+                        obj1.on_collided(obj2)
+                        obj2.on_collided(obj1)
+                except AttributeError:
+                    pass
+
+    def run(self):
+        self.last_time = self.time_function()
+        while True:
+            self.do_step()
 
     def stop(self):
         pass
@@ -86,10 +95,8 @@ class SimulationReal:
 
     def reset_simulation(self):
         self.time = 0
-        for obj in self.start_objects:
-            this_obj = self.find_object(obj.name)
-            this_obj.position = obj.position
-            this_obj.velocity = obj.velocity
+        for obj in self.objects:
+            obj.reset()
 
 
 class SimulationFlat:
@@ -124,7 +131,6 @@ class SimulationFlat:
 
             # Add air force
 
-
             # Compute collisions
             for obj1 in self.objects:
                 for obj2 in self.objects:
@@ -154,4 +160,3 @@ class SimulationFlat:
             this_obj = self.find_object(obj.name)
             this_obj.position = obj.position
             this_obj.velocity = obj.velocity
-

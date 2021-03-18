@@ -1,6 +1,6 @@
 import unittest
-from core.elementary.force import Force, from_numpy, add_forces
-from core.elementary.vector3 import Vector3
+from core.elementary.physical.force import Force, from_numpy, add_forces
+from core.elementary.math.geometry.geometry3d.vector3 import Vector3
 import numpy as np
 
 
